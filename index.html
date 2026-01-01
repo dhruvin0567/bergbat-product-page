@@ -14,16 +14,22 @@
     body {
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
-      color: #fff;
+      overflow-x: hidden;
+      overflow-y: auto;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
     }
 
     #canvas-container {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      min-height: 100vh;
       position: relative;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
     }
 
     canvas {
@@ -31,18 +37,20 @@
     }
 
     #ui-panel {
-      position: absolute;
+      position: fixed;
+      bottom: 0;
+      left: 0;
       right: 0;
-      top: 0;
-      width: 380px;
-      height: 100vh;
-      background: rgba(20, 20, 20, 0.95);
-      backdrop-filter: blur(10px);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 24px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-top: 1px solid #e5e5e5;
+      padding: 32px 40px;
       overflow-y: auto;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.08);
       z-index: 100;
+      max-height: 50vh;
     }
 
     #ui-panel::-webkit-scrollbar {
@@ -58,51 +66,61 @@
       border-radius: 4px;
     }
 
+    .product-title {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .product-title h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #1a1a1a;
+      margin: 0;
+      font-family: 'Arial Black', Arial, sans-serif;
+    }
+
     .panel-header {
-      margin-bottom: 32px;
-    }
-
-    .panel-header h1 {
-      font-size: 28px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
-    }
-
-    .panel-header p {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 14px;
+      display: none;
     }
 
     .tabs {
       display: flex;
-      gap: 8px;
+      gap: 0;
       margin-bottom: 32px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e5e5;
     }
 
     .tab {
-      padding: 10px 16px;
+      padding: 12px 24px;
       background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.6);
+      color: #666;
       cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       border-bottom: 2px solid transparent;
-      transition: all 0.2s;
+      transition: all 0.3s;
       position: relative;
       top: 1px;
+      font-family: 'Arial', sans-serif;
     }
 
     .tab:hover {
-      color: rgba(255, 255, 255, 0.8);
+      color: #1a1a1a;
     }
 
     .tab.active {
-      color: #fff;
-      border-bottom-color: #4A90E2;
+      color: #dc2626;
+      border-bottom-color: #dc2626;
     }
 
     .tab-content {
@@ -120,10 +138,10 @@
     .control-label {
       font-size: 13px;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 12px;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      color: #1a1a1a;
+      margin-bottom: 16px;
       display: block;
     }
 
@@ -135,24 +153,24 @@
     }
 
     .color-swatch {
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       cursor: pointer;
       border: 2px solid transparent;
       transition: all 0.2s;
       position: relative;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     }
 
     .color-swatch:hover {
       transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .color-swatch.active {
-      border-color: #4A90E2;
-      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+      border-color: #ffffff;
+      box-shadow: 0 0 0 3px #dc2626, 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .color-swatch input[type="color"] {
@@ -168,22 +186,22 @@
     }
 
     .custom-color-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.05);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px dashed #ccc;
+      background: #f5f5f5;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
-      color: rgba(255, 255, 255, 0.5);
+      color: #666;
     }
 
     .custom-color-btn:hover {
-      border-color: rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.1);
+      border-color: #999;
+      background: #e5e5e5;
     }
 
     .button-group {
@@ -194,11 +212,11 @@
 
     .button-option {
       padding: 10px 16px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.8);
+      background: #f5f5f5;
+      border: 1px solid #e5e5e5;
+      color: #1a1a1a;
       cursor: pointer;
-      border-radius: 6px;
+      border-radius: 4px;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s;
@@ -207,13 +225,13 @@
     }
 
     .button-option:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
+      background: #e5e5e5;
+      border-color: #ccc;
     }
 
     .button-option.active {
-      background: #4A90E2;
-      border-color: #4A90E2;
+      background: #dc2626;
+      border-color: #dc2626;
       color: #fff;
     }
 
@@ -269,25 +287,38 @@
       margin-bottom: 16px;
     }
 
+    .input-group {
+      position: relative;
+    }
+
     .input-group input[type="text"] {
       width: 100%;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 6px;
-      color: #fff;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      color: #1a1a1a;
       font-size: 14px;
       font-family: inherit;
     }
 
     .input-group input[type="text"]:focus {
       outline: none;
-      border-color: #4A90E2;
-      background: rgba(255, 255, 255, 0.15);
+      border-color: #dc2626;
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
     }
 
     .input-group input[type="text"]::placeholder {
-      color: rgba(255, 255, 255, 0.4);
+      color: #999;
+    }
+
+    .char-count {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+      font-size: 12px;
     }
 
     .specs-list {
@@ -319,38 +350,44 @@
 
     .camera-controls {
       position: absolute;
-      bottom: 24px;
-      left: 24px;
+      top: 40px;
+      right: 40px;
       display: flex;
       gap: 8px;
       z-index: 200;
     }
 
     .camera-btn {
-      padding: 10px 16px;
-      background: rgba(20, 20, 20, 0.9);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.9);
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      color: #1a1a1a;
       cursor: pointer;
-      border-radius: 6px;
-      font-size: 12px;
+      border-radius: 50%;
+      font-size: 18px;
       font-weight: 500;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .camera-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.3);
+      background: #f5f5f5;
+      border-color: #ccc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     .loading-overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(20, 20, 20, 0.95);
+      background: #ffffff;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -361,8 +398,8 @@
     .loading-spinner {
       width: 48px;
       height: 48px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #4A90E2;
+      border: 4px solid #e5e5e5;
+      border-top-color: #dc2626;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
@@ -373,7 +410,7 @@
     }
 
     .loading-text {
-      color: rgba(255, 255, 255, 0.7);
+      color: #666;
       font-size: 14px;
     }
 
@@ -389,18 +426,17 @@
     }
   </style>
 </head>
-<body>
+<body>  
   <div id="canvas-container"></div>
+  <div class="product-title">
+    <h1>MAPLE CUSTOM PRO RESERVE</h1>
+  </div>
   <div id="loading-overlay" class="loading-overlay">
     <div class="loading-spinner"></div>
     <div class="loading-text">Loading bat model...</div>
   </div>
 
   <div id="ui-panel" style="display: none;">
-    <div class="panel-header">
-      <h1>Customize Your Bat</h1>
-      <p>Design your perfect baseball bat</p>
-    </div>
 
     <div class="tabs">
       <button class="tab active" data-tab="barrel">BARREL</button>
@@ -412,24 +448,23 @@
     <!-- BARREL TAB -->
     <div id="barrel-tab" class="tab-content active">
       <div class="control-group">
-        <label class="control-label">Color</label>
+        <label class="control-label">Barrel Color - Navy Blue</label>
         <div class="color-picker-wrapper" id="barrel-color-picker"></div>
       </div>
 
       <div class="control-group">
-        <label class="control-label">Finish</label>
-        <div class="button-group">
-          <button class="button-option active" data-finish="glossy">Glossy</button>
-          <button class="button-option" data-finish="matte">Matte</button>
+        <label class="control-label">Barrel Engraving Field</label>
+        <div class="input-group">
+          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)" maxlength="25">
+          <span class="char-count" id="char-count">0/25</span>
         </div>
       </div>
 
       <div class="control-group">
-        <label class="control-label">Cup Style</label>
-        <div class="button-group">
-          <button class="button-option active" data-cup="full">Full Cup</button>
-          <button class="button-option" data-cup="half">Half Cup</button>
-          <button class="button-option" data-cup="none">No Cup</button>
+        <label class="control-label">Barrel Engraving Field</label>
+        <div class="input-group">
+          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)" maxlength="25">
+          <span class="char-count" id="char-count">0/25</span>
         </div>
       </div>
 
@@ -440,12 +475,6 @@
         </div>
       </div>
 
-      <div class="control-group">
-        <label class="control-label">Engraving Text</label>
-        <div class="input-group">
-          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)">
-        </div>
-      </div>
     </div>
 
     <!-- HANDLE TAB -->
@@ -519,9 +548,8 @@
   </div>
 
   <div class="camera-controls">
-    <button class="camera-btn" data-view="full">Full Bat</button>
-    <button class="camera-btn" data-view="barrel">Barrel</button>
-    <button class="camera-btn" data-view="handle">Handle</button>
+    <button class="camera-btn" id="zoom-out" title="Zoom Out">−</button>
+    <button class="camera-btn" id="zoom-in" title="Zoom In">+</button>
   </div>
 
   <script type="importmap">
