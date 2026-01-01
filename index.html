@@ -23,17 +23,21 @@
 
     #canvas-container {
       width: 100%;
-      min-height: 100vh;
+      min-height: 60vh;
+      height: 60vh;
       position: relative;
       background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 0;
+      padding: 20px 0;
+      overflow: hidden;
     }
 
     canvas {
       display: block;
+      width: 100%;
+      height: auto;
     }
 
     #ui-panel {
@@ -423,7 +427,9 @@
         border-left: none;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
       }
+    
     }
+
   </style>
 </head>
 <body>  
@@ -455,16 +461,16 @@
       <div class="control-group">
         <label class="control-label">Barrel Engraving Field</label>
         <div class="input-group">
-          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)" maxlength="25">
-          <span class="char-count" id="char-count">0/25</span>
+          <input type="text" id="engraving-text-1" placeholder="Enter text (e.g., player name)" maxlength="25">
+          <span class="char-count" id="char-count-1">0/25</span>
         </div>
       </div>
 
       <div class="control-group">
         <label class="control-label">Barrel Engraving Field</label>
         <div class="input-group">
-          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)" maxlength="25">
-          <span class="char-count" id="char-count">0/25</span>
+          <input type="text" id="engraving-text-2" placeholder="Enter text (e.g., player name)" maxlength="25">
+          <span class="char-count" id="char-count-2">0/25</span>
         </div>
       </div>
 
@@ -474,7 +480,6 @@
           <div class="switch" id="torpedo-switch"></div>
         </div>
       </div>
-
     </div>
 
     <!-- HANDLE TAB -->

@@ -24,12 +24,19 @@ class BatModelManager {
       loader.load(
         path,
         (object) => {
+          console.log('Model loaded successfully:', object);
           this.batModel = object;
           this._processModel();
+          console.log('Model processed, batGroup:', this.batGroup);
           resolve(object);
         },
-        undefined,
-        reject
+        (progress) => {
+          console.log('Loading progress:', progress);
+        },
+        (error) => {
+          console.error('Error loading model:', error);
+          reject(error);
+        }
       );
     });
   }
@@ -39,29 +46,56 @@ class BatModelManager {
 
     this.batGroup = new THREE.Group();
     this.batGroup.name = 'batGroup';
+    this.batGroup.position.set(0, 0, 0);
     this.scene.add(this.batGroup);
 
+    // Compute bounding box BEFORE any transformations
     const box = new THREE.Box3().setFromObject(this.batModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Store original bounds before any transformations
     this.originalBounds = {
       min: box.min.clone(),
       max: box.max.clone(),
-      center: box.getCenter(new THREE.Vector3()),
-      size: box.getSize(new THREE.Vector3())
+      center: center.clone(),
+      size: size.clone()
     };
-
-    this.batModel.position.sub(this.originalBounds.center);
     
-    // Rotate bat to horizontal position (around X axis)
-    this.batModel.rotation.x = -Math.PI / 2;
+    // Center the model at origin
+    this.batModel.position.sub(center);
+    this.batModel.position.set(0, 0, 0);
+    
+    // Lock orientation - horizontal
+    this.batModel.rotation.set(0, Math.PI / 2, 0);
 
-    const maxDim = Math.max(this.originalBounds.size.x, this.originalBounds.size.y, this.originalBounds.size.z);
-    const scale = 20 / maxDim;
-    this.batModel.scale.multiplyScalar(scale);
+    // Scale model appropriately
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 1.0; // Keep original scale, camera will adjust
+    this.batModel.scale.set(scale, scale, scale);
 
+    // Add model to group temporarily (will be replaced by region meshes)
+    this.batGroup.add(this.batModel);
+
+    // Update bounds after transform - ensure model is centered
     const scaledBox = new THREE.Box3().setFromObject(this.batModel);
-    this.originalBounds.min = scaledBox.min;
-    this.originalBounds.max = scaledBox.max;
-    this.originalBounds.size = scaledBox.getSize(new THREE.Vector3());
+    const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+    
+    // Ensure the model is perfectly centered at origin
+    if (Math.abs(scaledCenter.x) > 0.001 || Math.abs(scaledCenter.y) > 0.001 || Math.abs(scaledCenter.z) > 0.001) {
+      this.batModel.position.sub(scaledCenter);
+      // Recalculate bounds after recentering
+      const recenteredBox = new THREE.Box3().setFromObject(this.batModel);
+      this.originalBounds.min = recenteredBox.min;
+      this.originalBounds.max = recenteredBox.max;
+      this.originalBounds.size = recenteredBox.getSize(new THREE.Vector3());
+      this.originalBounds.center = new THREE.Vector3(0, 0, 0);
+    } else {
+      this.originalBounds.min = scaledBox.min;
+      this.originalBounds.max = scaledBox.max;
+      this.originalBounds.size = scaledBox.getSize(new THREE.Vector3());
+      this.originalBounds.center = new THREE.Vector3(0, 0, 0);
+    }
 
     this._splitIntoRegions();
   }
@@ -74,18 +108,68 @@ class BatModelManager {
       }
     });
 
-    if (meshes.length === 0) return;
+    if (meshes.length === 0) {
+      console.warn('No meshes found in model');
+      return;
+    }
 
-    let sourceGeometry = meshes[0].geometry.clone();
+    // Use the first mesh's geometry (or combine if needed)
+    let sourceGeometry = null;
+    if (meshes.length === 1) {
+      sourceGeometry = meshes[0].geometry.clone();
+    } else {
+      // For multiple meshes, just use the first one for now
+      // TODO: Could merge geometries if needed
+      sourceGeometry = meshes[0].geometry.clone();
+      console.log(`Multiple meshes found (${meshes.length}), using first mesh geometry`);
+    }
     
+    if (!sourceGeometry || !sourceGeometry.attributes.position) {
+      console.error('Invalid geometry - no position attribute');
+      return;
+    }
+
     const positions = sourceGeometry.attributes.position.array;
-
-    const yMin = this.originalBounds.min.y;
-    const yMax = this.originalBounds.max.y;
-    const yRange = yMax - yMin;
     
-    const knobEnd = yMin + yRange * 0.15;        
-    const handleEnd = yMin + yRange * 0.40;      
+    // Use the transformed bounds (after rotation) for splitting
+    // Since model is rotated 90 degrees on Y, we need to use the correct axis
+    // After rotation, the original Y becomes Z, so we use Z for splitting
+    const bounds = this.originalBounds;
+    
+    // Try different axes to find the longest dimension (which should be the bat length)
+    const xRange = bounds.max.x - bounds.min.x;
+    const yRange = bounds.max.y - bounds.min.y;
+    const zRange = bounds.max.z - bounds.min.z;
+    
+    let useAxis = 'y'; // default
+    let axisIndex = 1; // Y axis index in position array
+    let minVal, maxVal, range;
+    
+    // Find the axis with the largest range (this should be the bat length)
+    if (xRange >= yRange && xRange >= zRange) {
+      useAxis = 'x';
+      axisIndex = 0;
+      minVal = bounds.min.x;
+      maxVal = bounds.max.x;
+      range = xRange;
+    } else if (zRange >= yRange && zRange >= xRange) {
+      useAxis = 'z';
+      axisIndex = 2;
+      minVal = bounds.min.z;
+      maxVal = bounds.max.z;
+      range = zRange;
+    } else {
+      useAxis = 'y';
+      axisIndex = 1;
+      minVal = bounds.min.y;
+      maxVal = bounds.max.y;
+      range = yRange;
+    }
+    
+    console.log('Splitting axis:', useAxis, 'range:', range);
+    
+    const knobEnd = minVal + range * 0.15;
+    const handleEnd = minVal + range * 0.40;
 
     const knobIndices = [];
     const handleIndices = [];
@@ -99,30 +183,33 @@ class BatModelManager {
         const i2 = indexArray[i + 1];
         const i3 = indexArray[i + 2];
 
-        const y1 = positions[i1 * 3 + 1];
-        const y2 = positions[i2 * 3 + 1];
-        const y3 = positions[i3 * 3 + 1];
-        const avgY = (y1 + y2 + y3) / 3;
+        // Get coordinate based on axis index
+        const coord1 = positions[i1 * 3 + axisIndex];
+        const coord2 = positions[i2 * 3 + axisIndex];
+        const coord3 = positions[i3 * 3 + axisIndex];
+        const avgCoord = (coord1 + coord2 + coord3) / 3;
 
-        if (avgY <= knobEnd) {
+        if (avgCoord <= knobEnd) {
           knobIndices.push(i1, i2, i3);
-        } else if (avgY <= handleEnd) {
+        } else if (avgCoord <= handleEnd) {
           handleIndices.push(i1, i2, i3);
         } else {
           barrelIndices.push(i1, i2, i3);
         }
       }
     } else {
+      // Non-indexed geometry
       for (let i = 0; i < positions.length; i += 9) {
-        const y1 = positions[i + 1];
-        const y2 = positions[i + 4];
-        const y3 = positions[i + 7];
-        const avgY = (y1 + y2 + y3) / 3;
+        // Get coordinate based on axis index (non-indexed geometry)
+        const coord1 = positions[i + axisIndex];
+        const coord2 = positions[i + 3 + axisIndex];
+        const coord3 = positions[i + 6 + axisIndex];
+        const avgCoord = (coord1 + coord2 + coord3) / 3;
         const baseIndex = i / 3;
 
-        if (avgY <= knobEnd) {
+        if (avgCoord <= knobEnd) {
           knobIndices.push(baseIndex, baseIndex + 1, baseIndex + 2);
-        } else if (avgY <= handleEnd) {
+        } else if (avgCoord <= handleEnd) {
           handleIndices.push(baseIndex, baseIndex + 1, baseIndex + 2);
         } else {
           barrelIndices.push(baseIndex, baseIndex + 1, baseIndex + 2);
@@ -130,21 +217,37 @@ class BatModelManager {
       }
     }
 
+    console.log('Region indices:', {
+      knob: knobIndices.length,
+      handle: handleIndices.length,
+      barrel: barrelIndices.length
+    });
+
     this.regions.knob = this._createRegionGeometry(sourceGeometry, knobIndices);
     this.regions.handle = this._createRegionGeometry(sourceGeometry, handleIndices);
     this.regions.barrel = this._createRegionGeometry(sourceGeometry, barrelIndices);
+    
+    // If any region failed, use the full geometry as fallback
+    if (!this.regions.barrel && !this.regions.handle && !this.regions.knob) {
+      console.warn('All regions failed to create, using full geometry as fallback');
+      this.regions.barrel = sourceGeometry.clone();
+    }
     
     if (this.regions.knob) {
       this._splitKnobIntoFaceAndBody();
     }
 
+    // Remove original meshes from batModel
     meshes.forEach(mesh => {
       if (mesh.parent) {
         mesh.parent.remove(mesh);
-      } else {
-        this.scene.remove(mesh);
       }
     });
+
+    // Remove batModel from group if it exists
+    if (this.batModel && this.batModel.parent) {
+      this.batModel.parent.remove(this.batModel);
+    }
 
     this.geometryMap.set('original', sourceGeometry);
   }
@@ -350,7 +453,10 @@ class BatModelManager {
   getRegionMesh(regionName) {
     const actualRegionName = regionName === 'knobFace' ? 'knobFace' : regionName;
     
-    if (!this.regions[actualRegionName]) return null;
+    if (!this.regions[actualRegionName]) {
+      console.warn(`No geometry found for region: ${actualRegionName}`);
+      return null;
+    }
     
     let mesh = null;
     if (this.batGroup) {
@@ -363,16 +469,48 @@ class BatModelManager {
 
     if (!mesh) {
       const geometry = this.regions[actualRegionName];
-      const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      
+      // Validate geometry
+      if (!geometry || !geometry.attributes || !geometry.attributes.position) {
+        console.error(`Invalid geometry for region: ${actualRegionName}`);
+        return null;
+      }
+      
+      const positionCount = geometry.attributes.position.count;
+      if (positionCount === 0) {
+        console.warn(`Empty geometry for region: ${actualRegionName}`);
+        return null;
+      }
+      
+      // Use default colors based on region for better visibility
+      let defaultColor = 0x1e3a5f; // Navy blue for barrel
+      if (actualRegionName === 'handle') {
+        defaultColor = 0xD4A574; // Natural wood
+      } else if (actualRegionName === 'knob' || actualRegionName === 'knobFace') {
+        defaultColor = 0x1a1a1a; // Black
+      }
+      
+      const material = new THREE.MeshStandardMaterial({ 
+        color: defaultColor,
+        metalness: 0.2,
+        roughness: 0.6,
+        envMapIntensity: 1.0
+      });
       mesh = new THREE.Mesh(geometry, material);
       mesh.userData.region = actualRegionName;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       
+      // Ensure geometry is valid
+      geometry.computeBoundingSphere();
+      geometry.computeBoundingBox();
+      
       if (this.batGroup) {
         this.batGroup.add(mesh);
+        console.log(`Added ${actualRegionName} mesh to batGroup, vertices: ${positionCount}`);
       } else {
         this.scene.add(mesh);
+        console.log(`Added ${actualRegionName} mesh to scene, vertices: ${positionCount}`);
       }
 
       const materialController = window.batConfigurator?.materialController;
@@ -425,6 +563,7 @@ class MaterialController {
     this.renderer = renderer;
     this.envMap = null;
     this.materials = new Map();
+    this.pendingMaterials = new Map();
     this.presetColors = {
       barrel: [
         { name: 'Navy Blue', color: 0x1e3a5f },
@@ -458,7 +597,8 @@ class MaterialController {
     };
     this.engravingText = null;
     this.engravingCanvas = null;
-    this._initEnvironment();
+    // Initialize environment map (async but don't block)
+    this._initEnvironment().catch(err => console.error('Error initializing environment:', err));
   }
 
   async _initEnvironment() {
@@ -488,25 +628,16 @@ class MaterialController {
   getMaterial(regionName, options = {}) {
     const material = new THREE.MeshStandardMaterial({
       color: options.color || 0xffffff,
-      metalness: options.metalness || 0.0,
-      roughness: options.roughness || 0.7,
+      metalness: options.metalness !== undefined ? options.metalness : 0.2,
+      roughness: options.roughness !== undefined ? options.roughness : 0.6,
       envMap: this.envMap,
-      envMapIntensity: options.envMapIntensity || 1.0,
+      envMapIntensity: options.envMapIntensity !== undefined ? options.envMapIntensity : 1.2, // Increased for better visibility
     });
 
     // Add wood grain texture for handle
     if (regionName === 'handle' && options.useWoodTexture) {
       const woodTexture = this._createWoodTexture();
       material.map = woodTexture;
-      material.roughness = 0.8;
-      material.metalness = 0.0;
-    }
-
-    // Add painted barrel texture
-    if (regionName === 'barrel') {
-      material.roughness = options.roughness || 0.2;
-      material.metalness = options.metalness || 0.1;
-      material.envMapIntensity = options.envMapIntensity || 1.5;
     }
 
     return material;
@@ -862,14 +993,29 @@ class UIStateController {
       this.modelManager.updateTorpedo(enabled);
     });
 
-    const engravingInput = document.getElementById('engraving-text');
-    const charCount = document.getElementById('char-count');
-    if (engravingInput && charCount) {
-      engravingInput.addEventListener('input', (e) => {
+    // Handle both engraving inputs
+    const engravingInput1 = document.getElementById('engraving-text-1');
+    const charCount1 = document.getElementById('char-count-1');
+    if (engravingInput1 && charCount1) {
+      engravingInput1.addEventListener('input', (e) => {
         const text = e.target.value;
         this.state.barrel.engraving = text;
-        charCount.textContent = `${text.length}/25`;
+        charCount1.textContent = `${text.length}/25`;
         this.materialController.addEngraving(text);
+      });
+    }
+
+    const engravingInput2 = document.getElementById('engraving-text-2');
+    const charCount2 = document.getElementById('char-count-2');
+    if (engravingInput2 && charCount2) {
+      engravingInput2.addEventListener('input', (e) => {
+        const text = e.target.value;
+        // Combine both engraving texts or use the second one
+        const text1 = engravingInput1 ? engravingInput1.value : '';
+        const combinedText = text1 && text ? `${text1} / ${text}` : (text || text1);
+        this.state.barrel.engraving = combinedText;
+        charCount2.textContent = `${text.length}/25`;
+        this.materialController.addEngraving(combinedText);
       });
     }
 
@@ -1162,8 +1308,8 @@ class CameraController {
     this.controls.enablePan = true;
     this.controls.minDistance = 20;
     this.controls.maxDistance = 200;
-    this.controls.maxPolarAngle = Math.PI / 2;
-    this.controls.minPolarAngle = 0;
+    this.controls.maxPolarAngle = Math.PI; // Allow full vertical rotation
+    this.controls.minPolarAngle = 0; // Allow full vertical rotation
   }
 
   updateBounds(bounds) {
@@ -1216,14 +1362,11 @@ class BatConfigurator {
     this.scene.background = new THREE.Color(0xffffff);
 
     this.camera = new THREE.PerspectiveCamera(
-      45,
+      35,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-
-    // Position camera for horizontal bat view
-    this.camera.position.set(0, 8, 35);
 
     this.renderer = new THREE.WebGLRenderer({ 
       antialias: true,
@@ -1231,7 +1374,12 @@ class BatConfigurator {
       powerPreference: "high-performance"
     });
 
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    // Set renderer size to match container
+    const container = document.getElementById('canvas-container');
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+    const containerHeight = container ? container.clientHeight : window.innerHeight * 0.6;
+    
+    this.renderer.setSize(containerWidth, containerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1244,11 +1392,12 @@ class BatConfigurator {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minDistance = 25;
-    this.controls.maxDistance = 100;
-    this.controls.maxPolarAngle = Math.PI / 2.05;
-    this.controls.minPolarAngle = Math.PI / 2.05;
-    this.controls.enablePan = false;
+    this.controls.enableRotate = true; // Enable 360 degree rotation
+    this.controls.enablePan = true; // Enable panning
+    this.controls.enableZoom = true;
+    this.controls.autoRotate = false;
+    this.controls.minPolarAngle = 0; // Allow full vertical rotation
+    this.controls.maxPolarAngle = Math.PI; // Allow full vertical rotation
     this.controls.target.set(0, 0, 0);
     this.controls.update();
 
@@ -1260,6 +1409,41 @@ class BatConfigurator {
     try {
       await this.modelManager.loadModel('baseball.obj');
       
+      // Auto-fit camera to model - position for horizontal bat view
+      const bounds = this.modelManager.getBounds();
+      if (bounds) {
+        const size = bounds.size;
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        // Ensure we have a valid dimension
+        if (maxDim > 0) {
+          // Calculate camera distance to fit the entire bat
+          const batLength = maxDim;
+          const batHeight = Math.min(size.x, size.y, size.z);
+          
+          // Position camera to view bat horizontally from top-front angle
+          // This gives a nice 3/4 view like in the reference image
+          const distance = batLength * 1.8;
+          this.camera.position.set(
+            distance * 0.5,  // Slight angle to the right
+            distance * 0.4,  // Slight angle from above
+            distance * 0.7   // Coming from front
+          );
+          this.camera.lookAt(0, 0, 0);
+          this.controls.target.set(0, 0, 0);
+          this.controls.minDistance = Math.max(distance * 0.4, 0.1);
+          this.controls.maxDistance = Math.max(distance * 3.0, 100);
+          this.controls.update();
+        } else {
+          // Fallback camera position if bounds are invalid
+          console.warn('Invalid model bounds, using default camera position');
+          this.camera.position.set(40, 25, 35);
+          this.camera.lookAt(0, 0, 0);
+          this.controls.target.set(0, 0, 0);
+          this.controls.update();
+        }
+      }
+      
       const batGroup = this.modelManager.getBatGroup();
       this.rotationController = new ModelRotationController(batGroup);
       
@@ -1270,16 +1454,93 @@ class BatConfigurator {
         this.rotationController
       );
 
-      const bounds = this.modelManager.getBounds();
       if (bounds && this.cameraController) {
         this.cameraController.updateBounds(bounds);
       }
       
-      this.modelManager.getRegionMesh('barrel');
-      this.modelManager.getRegionMesh('handle');
-      this.modelManager.getRegionMesh('knob');
+      // Create region meshes - this adds them to the scene
+      const barrelMesh = this.modelManager.getRegionMesh('barrel');
+      const handleMesh = this.modelManager.getRegionMesh('handle');
+      const knobMesh = this.modelManager.getRegionMesh('knob');
+      
       if (this.modelManager.regions.knobFace) {
         this.modelManager.getRegionMesh('knobFace');
+      }
+      
+      // Verify meshes were created
+      const meshesCreated = {
+        barrel: !!barrelMesh,
+        handle: !!handleMesh,
+        knob: !!knobMesh,
+        batGroup: !!batGroup,
+        sceneChildren: this.scene.children.length,
+        batGroupChildren: batGroup ? batGroup.children.length : 0
+      };
+      
+      console.log('Region meshes created:', meshesCreated);
+      
+      // If no meshes were created, try to show the original model as fallback
+      if (!barrelMesh && !handleMesh && !knobMesh) {
+        console.warn('All region meshes failed to create, attempting fallback');
+        const originalGeometry = this.modelManager.geometryMap.get('original');
+        if (originalGeometry && batGroup) {
+          const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f });
+          const fallbackMesh = new THREE.Mesh(originalGeometry, fallbackMaterial);
+          fallbackMesh.userData.region = 'barrel';
+          batGroup.add(fallbackMesh);
+          console.log('Added fallback mesh with full geometry');
+        }
+      }
+      
+      // Update bounds after meshes are created
+      if (batGroup) {
+        // Force update matrix world
+        batGroup.updateMatrixWorld(true);
+        const updatedBox = new THREE.Box3().setFromObject(batGroup);
+        const updatedSize = updatedBox.getSize(new THREE.Vector3());
+        const updatedMaxDim = Math.max(updatedSize.x, updatedSize.y, updatedSize.z);
+        
+        console.log('Updated bounds:', {
+          size: updatedSize,
+          maxDim: updatedMaxDim,
+          center: updatedBox.getCenter(new THREE.Vector3())
+        });
+        
+        if (updatedMaxDim > 0) {
+          // Calculate optimal camera position to show full bat horizontally centered
+          const batLength = updatedMaxDim;
+          const batHeight = Math.min(updatedSize.x, updatedSize.y, updatedSize.z);
+          
+          // Position camera for horizontal bat view (like reference image)
+          // View from top-front angle to show the bat nicely
+          const distance = batLength * 1.8;
+          this.camera.position.set(
+            distance * 0.5,  // Slight angle to the right
+            distance * 0.4,  // Slight angle from above  
+            distance * 0.7   // Coming from front
+          );
+          this.camera.lookAt(0, 0, 0);
+          this.controls.target.set(0, 0, 0);
+          this.controls.minDistance = Math.max(distance * 0.4, 0.1);
+          this.controls.maxDistance = Math.max(distance * 3.0, 100);
+          // Enable full 360 degree rotation
+          this.controls.minPolarAngle = 0;
+          this.controls.maxPolarAngle = Math.PI;
+          this.controls.enableRotate = true;
+          this.controls.enablePan = true;
+          this.controls.update();
+          console.log('Camera positioned at:', this.camera.position, 'Distance:', distance);
+        } else {
+          console.warn('Invalid bounds after mesh creation, using default camera');
+          this.camera.position.set(40, 25, 35);
+          this.camera.lookAt(0, 0, 0);
+          this.controls.target.set(0, 0, 0);
+          this.controls.minPolarAngle = 0;
+          this.controls.maxPolarAngle = Math.PI;
+          this.controls.enableRotate = true;
+          this.controls.enablePan = true;
+          this.controls.update();
+        }
       }
       
       this._initializeMaterials();
@@ -1304,33 +1565,24 @@ class BatConfigurator {
   }
 
   _setupLighting() {
-    // Studio lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Enhanced lighting for better visibility
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased ambient light
     this.scene.add(ambientLight);
 
-    // Key light from top-left
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    keyLight.position.set(30, 40, 30);
+    // Main key light - brighter and better positioned
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    keyLight.position.set(5, 8, 5);
     keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.camera.near = 0.5;
-    keyLight.shadow.camera.far = 200;
-    keyLight.shadow.camera.left = -50;
-    keyLight.shadow.camera.right = 50;
-    keyLight.shadow.camera.top = 50;
-    keyLight.shadow.camera.bottom = -50;
-    keyLight.shadow.bias = -0.0001;
     this.scene.add(keyLight);
 
-    // Fill light to reduce harsh shadows
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    fillLight.position.set(-25, 15, -25);
+    // Fill light from opposite side
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    fillLight.position.set(-5, 3, -5);
     this.scene.add(fillLight);
 
-    // Rim light to define edges
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
-    rimLight.position.set(0, 20, -40);
+    // Additional rim light for better definition
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    rimLight.position.set(0, 0, -8);
     this.scene.add(rimLight);
   }
 
@@ -1341,28 +1593,86 @@ class BatConfigurator {
       knob: { color: 0x1a1a1a }
     };
 
+    // Initialize barrel with better visibility
     this.materialController.updateColor('barrel', defaultState.barrel.color);
     this.materialController.updateFinish('barrel', defaultState.barrel.finish);
     
-    // Initialize handle with wood texture
+    // Initialize handle with wood texture and better visibility
     const handleMesh = this.modelManager.getRegionMesh('handle');
     if (handleMesh) {
       const handleOptions = {
         color: defaultState.handle.color,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.0,
+        envMapIntensity: 1.3, // Increased for better visibility
         useWoodTexture: true
       };
       this.materialController.updateRegionMaterial('handle', handleOptions);
     }
     
-    this.materialController.updateColor('knob', defaultState.knob.color);
+    // Initialize knob with better visibility
+    const knobMesh = this.modelManager.getRegionMesh('knob');
+    if (knobMesh) {
+      const knobOptions = {
+        color: defaultState.knob.color,
+        roughness: 0.5,
+        metalness: 0.1,
+        envMapIntensity: 1.2
+      };
+      this.materialController.updateRegionMaterial('knob', knobOptions);
+    }
+    
+    // Also update knobFace if it exists
+    if (this.modelManager.regions.knobFace) {
+      const knobFaceMesh = this.modelManager.getRegionMesh('knobFace');
+      if (knobFaceMesh) {
+        const knobFaceOptions = {
+          color: defaultState.knob.color,
+          roughness: 0.5,
+          metalness: 0.1,
+          envMapIntensity: 1.2
+        };
+        this.materialController.updateRegionMaterial('knobFace', knobFaceOptions);
+      }
+    }
   }
 
   _onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    // Update renderer size to match container
+    const container = document.getElementById('canvas-container');
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+    const containerHeight = container ? container.clientHeight : window.innerHeight * 0.6;
+    
+    this.camera.aspect = containerWidth / containerHeight;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(containerWidth, containerHeight);
+    
+    // Maintain camera distance to keep bat fully visible and centered
+    if (this.modelManager) {
+      const bounds = this.modelManager.getBounds();
+      if (bounds) {
+        const size = bounds.size;
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const batLength = maxDim;
+        const distance = batLength * 1.8;
+        
+        // Maintain the same viewing angle
+        const currentDistance = this.camera.position.length();
+        if (Math.abs(currentDistance - distance) > 0.1) {
+          const direction = this.camera.position.clone().normalize();
+          this.camera.position.copy(direction.multiplyScalar(distance));
+          // Reapply the viewing angle
+          this.camera.position.set(
+            distance * 0.5,
+            distance * 0.4,
+            distance * 0.7
+          );
+          this.camera.lookAt(0, 0, 0);
+          this.controls.target.set(0, 0, 0);
+          this.controls.update();
+        }
+      }
+    }
   }
 
   animate() {
