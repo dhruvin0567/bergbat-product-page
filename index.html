@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baseball Bat Configurator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+      color: #fff;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #ui-panel {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 380px;
+      height: 100vh;
+      background: rgba(20, 20, 20, 0.95);
+      backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 24px;
+      overflow-y: auto;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+    }
+
+    #ui-panel::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #ui-panel::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    #ui-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .panel-header {
+      margin-bottom: 32px;
+    }
+
+    .panel-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .panel-header p {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      top: 1px;
+    }
+
+    .tab:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .tab.active {
+      color: #fff;
+      border-bottom-color: #4A90E2;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .control-group {
+      margin-bottom: 32px;
+    }
+
+    .control-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .color-picker-wrapper {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .color-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .color-swatch.active {
+      border-color: #4A90E2;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .color-swatch input[type="color"] {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .custom-color-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .custom-color-btn:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .button-option {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .button-option:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .button-option.active {
+      background: #4A90E2;
+      border-color: #4A90E2;
+      color: #fff;
+    }
+
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .toggle-switch:last-child {
+      border-bottom: none;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .switch.active {
+      background: #4A90E2;
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .switch.active::after {
+      transform: translateX(24px);
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .input-group input[type="text"]:focus {
+      outline: none;
+      border-color: #4A90E2;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .input-group input[type="text"]::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .specs-list {
+      list-style: none;
+    }
+
+    .specs-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .specs-list li:last-child {
+      border-bottom: none;
+    }
+
+    .spec-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+    }
+
+    .spec-value {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .camera-controls {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      display: flex;
+      gap: 8px;
+      z-index: 200;
+    }
+
+    .camera-btn {
+      padding: 10px 16px;
+      background: rgba(20, 20, 20, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .camera-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(20, 20, 20, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #4A90E2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      #ui-panel {
+        width: 100%;
+        height: 50vh;
+        bottom: 0;
+        top: auto;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading bat model...</div>
+  </div>
+
+  <div id="ui-panel" style="display: none;">
+    <div class="panel-header">
+      <h1>Customize Your Bat</h1>
+      <p>Design your perfect baseball bat</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="barrel">BARREL</button>
+      <button class="tab" data-tab="handle">HANDLE</button>
+      <button class="tab" data-tab="knob">KNOB</button>
+      <button class="tab" data-tab="specs">BAT SPECS</button>
+    </div>
+
+    <!-- BARREL TAB -->
+    <div id="barrel-tab" class="tab-content active">
+      <div class="control-group">
+        <label class="control-label">Color</label>
+        <div class="color-picker-wrapper" id="barrel-color-picker"></div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Finish</label>
+        <div class="button-group">
+          <button class="button-option active" data-finish="glossy">Glossy</button>
+          <button class="button-option" data-finish="matte">Matte</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Cup Style</label>
+        <div class="button-group">
+          <button class="button-option active" data-cup="full">Full Cup</button>
+          <button class="button-option" data-cup="half">Half Cup</button>
+          <button class="button-option" data-cup="none">No Cup</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="toggle-switch">
+          <span class="toggle-label">Torpedo</span>
+          <div class="switch" id="torpedo-switch"></div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Engraving Text</label>
+        <div class="input-group">
+          <input type="text" id="engraving-text" placeholder="Enter text (e.g., player name)">
+        </div>
+      </div>
+    </div>
+
+    <!-- HANDLE TAB -->
+    <div id="handle-tab" class="tab-content">
+      <div class="control-group">
+        <label class="control-label">Color</label>
+        <div class="color-picker-wrapper" id="handle-color-picker"></div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Grip Style</label>
+        <div class="button-group">
+          <button class="button-option active" data-grip="smooth">Smooth</button>
+          <button class="button-option" data-grip="wrapped">Wrapped</button>
+          <button class="button-option" data-grip="taper">Taper</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Finish</label>
+        <div class="button-group">
+          <button class="button-option active" data-finish="matte">Matte</button>
+          <button class="button-option" data-finish="glossy">Glossy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KNOB TAB -->
+    <div id="knob-tab" class="tab-content">
+      <div class="control-group">
+        <label class="control-label">Color</label>
+        <div class="color-picker-wrapper" id="knob-color-picker"></div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Knob Style</label>
+        <div class="button-group">
+          <button class="button-option active" data-knob="round">Round</button>
+          <button class="button-option" data-knob="flared">Flared</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPECS TAB -->
+    <div id="specs-tab" class="tab-content">
+      <div class="control-group">
+        <ul class="specs-list">
+          <li>
+            <span class="spec-label">Length</span>
+            <span class="spec-value" id="spec-length">34"</span>
+          </li>
+          <li>
+            <span class="spec-label">Weight</span>
+            <span class="spec-value" id="spec-weight">-3 oz</span>
+          </li>
+          <li>
+            <span class="spec-label">Barrel Diameter</span>
+            <span class="spec-value" id="spec-barrel">2 5/8"</span>
+          </li>
+          <li>
+            <span class="spec-label">Material</span>
+            <span class="spec-value" id="spec-material">Composite</span>
+          </li>
+          <li>
+            <span class="spec-label">Finish</span>
+            <span class="spec-value" id="spec-finish">Custom</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-controls">
+    <button class="camera-btn" data-view="full">Full Bat</button>
+    <button class="camera-btn" data-view="barrel">Barrel</button>
+    <button class="camera-btn" data-view="handle">Handle</button>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module" src="configurator.js"></script>
+</body>
+</html>
