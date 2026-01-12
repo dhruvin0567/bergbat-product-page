@@ -1,0 +1,303 @@
+* {
+  font-family: 'Oswald', sans-serif;
+}
+
+.color-customizer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: #ffffff;
+  font-family: 'Oswald', sans-serif;
+}
+
+.customizer-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c2c2c;
+  margin-bottom: 2rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customization-sections-container {
+  display: flex;
+  flex-direction: row;
+  gap: 3rem;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+}
+
+.customization-section {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.logo-section {
+  flex: 1.5;
+  max-width: 600px;
+}
+
+.section-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4a4a4a;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.color-swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: none;
+  padding: 0;
+  position: relative;
+}
+
+.color-swatch:hover {
+  transform: scale(1.05);
+  border-color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-swatch.selected {
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #333, 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.color-swatch:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.color-swatch:focus-visible {
+  outline: 2px solid #333;
+  outline-offset: 2px;
+}
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.logo-swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  padding: 2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logo-swatch img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-swatch:hover {
+  transform: scale(1.05);
+  border-color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logo-swatch.selected {
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #333, 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.logo-swatch:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.logo-swatch:focus-visible {
+  outline: 2px solid #333;
+  outline-offset: 2px;
+}
+
+.form-sections-container {
+  width: 100%;
+  margin-top: 3rem;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-field.full-width {
+  flex: 1 1 100%;
+}
+
+.field-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a4a4a;
+  margin-bottom: 0.5rem;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field-description {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: #666;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.form-select {
+  font-family: 'Oswald', sans-serif;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-select:hover {
+  border-color: #999;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.form-textarea {
+  font-family: 'Oswald', sans-serif;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 0.9rem;
+  color: #333;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s ease;
+}
+
+.form-textarea:hover {
+  border-color: #999;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.add-to-cart-button {
+  font-family: 'Oswald', sans-serif;
+  background: #333;
+  color: #ffffff;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.add-to-cart-button:hover {
+  background: #555;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.add-to-cart-button:active {
+  transform: translateY(0);
+}
+
+.add-to-cart-button svg {
+  stroke: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .customization-sections-container {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .customization-section {
+    max-width: 100%;
+  }
+
+  .logo-section {
+    max-width: 100%;
+  }
+
+  .color-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .logo-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-field {
+    min-width: 100%;
+  }
+}

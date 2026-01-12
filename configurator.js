@@ -852,7 +852,6 @@ class BatModelManager {
     knobMesh.userData.knobStyle = style;
   }
 }
-
 class MaterialController {
   constructor(scene, renderer) {
     this.scene = scene;
@@ -1214,7 +1213,7 @@ class UIStateController {
       },
 
       knob: {
-        color: 0x1a1a1a,
+        sticker: null,
         style: "round",
       },
     };
@@ -1264,10 +1263,7 @@ class UIStateController {
       this.materialController.getPresetColors("handle")
     );
 
-    this._createColorPicker(
-      "knob",
-      this.materialController.getPresetColors("knob")
-    );
+    this._createKnobStickerPicker();
   }
 
   _createColorPicker(regionName, presetColors) {
@@ -1325,6 +1321,113 @@ class UIStateController {
 
     customBtn.appendChild(colorInput);
     container.appendChild(customBtn);
+  }
+
+  _createKnobStickerPicker() {
+    const container = document.getElementById("knob-sticker-picker");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    // Create "None" option first
+    const noneOption = document.createElement("div");
+    noneOption.className = "knob-sticker active";
+    noneOption.dataset.sticker = "none";
+    noneOption.innerHTML = '<div style="width: 100%; height: 100%; border-radius: 50%; background: #f5f5f5; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">None</div>';
+    noneOption.title = "None";
+
+    noneOption.addEventListener("click", () => {
+      this._selectKnobSticker(null);
+      container
+        .querySelectorAll(".knob-sticker")
+        .forEach((s) => s.classList.remove("active"));
+      noneOption.classList.add("active");
+      this._updateKnobStickerLabel("None");
+    });
+
+    container.appendChild(noneOption);
+
+    // Create sticker options for knob1.png through knob15.png
+    for (let i = 1; i <= 15; i++) {
+      const sticker = document.createElement("div");
+      sticker.className = "knob-sticker";
+      sticker.dataset.sticker = `knob${i}`;
+      
+      const img = document.createElement("img");
+      img.src = `assests/img/knob${i}.png`;
+      img.alt = `Knob Sticker ${i}`;
+      img.onerror = function() {
+        this.style.display = "none";
+        sticker.innerHTML = `<div style="width: 100%; height: 100%; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">${i}</div>`;
+      };
+      
+      sticker.appendChild(img);
+      sticker.title = `Knob Sticker ${i}`;
+
+      sticker.addEventListener("click", () => {
+        this._selectKnobSticker(`knob${i}`);
+        container
+          .querySelectorAll(".knob-sticker")
+          .forEach((s) => s.classList.remove("active"));
+        sticker.classList.add("active");
+        this._updateKnobStickerLabel(`Knob Sticker ${i}`);
+      });
+
+      container.appendChild(sticker);
+    }
+  }
+
+  _updateKnobStickerLabel(stickerName) {
+    const label = document
+      .getElementById("knob-sticker-picker")
+      ?.closest(".control-group")
+      ?.querySelector(".control-label");
+    if (label) {
+      label.textContent = `Knob Sticker - ${stickerName}`;
+    }
+  }
+
+  _selectKnobSticker(stickerName) {
+    this.state.knob.sticker = stickerName;
+    console.log(`🎨 Selecting knob sticker: ${stickerName || "None"}`);
+    
+    // Apply sticker to knob face if available
+    const batManager = window.batConfigurator?.modelManager;
+    if (!batManager) return;
+
+    const knobFaceMesh = batManager.getRegionMesh("knobFace");
+    if (knobFaceMesh && stickerName) {
+      // Load texture from sticker image
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
+        `assests/img/${stickerName}.png`,
+        (texture) => {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          
+          const material = knobFaceMesh.material;
+          if (material) {
+            if (material.map) {
+              material.map.dispose();
+            }
+            material.map = texture;
+            material.needsUpdate = true;
+          }
+        },
+        undefined,
+        (error) => {
+          console.error("Error loading knob sticker texture:", error);
+        }
+      );
+    } else if (knobFaceMesh && !stickerName) {
+      // Remove texture if "None" is selected
+      const material = knobFaceMesh.material;
+      if (material && material.map) {
+        material.map.dispose();
+        material.map = null;
+        material.needsUpdate = true;
+      }
+    }
   }
 
   _selectColor(regionName, color) {
@@ -1729,17 +1832,78 @@ class CameraController {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      const eased =
+      // Smooth ease for target (keeps knob perfectly centered)
+      const easedTarget =
         progress < 0.5
           ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-      this.camera.position.lerpVectors(startPosition, targetPosition, eased);
-      this.controls.target.lerpVectors(startTarget, targetLookAt, eased);
+      // Ease-out with a slight overshoot for camera position (premium feel)
+      const easeOutBack = (t) => {
+        const s = 1.1; // low overshoot for subtle motion
+        t -= 1;
+        return 1 + t * t * ((s + 1) * t + s);
+      };
+
+      const easedPosition = easeOutBack(progress);
+
+      // Base position along the path with overshoot
+      const basePosition = new THREE.Vector3().lerpVectors(
+        startPosition,
+        targetPosition,
+        easedPosition
+      );
+
+      // Subtle dolly-in toward the end of the animation (last 15%)
+      let finalPosition = basePosition;
+      if (progress > 0.85) {
+        const local = (progress - 0.85) / 0.15; // 0 → 1 over last 15%
+        const dollyEase = local * local; // ease-in
+        const maxDolly = 0.08; // 8% closer at peak
+
+        const toTarget = new THREE.Vector3().subVectors(
+          targetLookAt,
+          basePosition
+        );
+        const currentDist = toTarget.length();
+        if (currentDist > 0.0001) {
+          toTarget.normalize();
+          const dollyAmount = currentDist * maxDolly * dollyEase;
+          finalPosition = basePosition.clone().add(
+            toTarget.multiplyScalar(dollyAmount)
+          );
+        }
+      }
+
+      this.camera.position.copy(finalPosition);
+
+      // Target moves with smooth, non-overshooting ease so knob stays centered
+      this.controls.target.lerpVectors(startTarget, targetLookAt, easedTarget);
       this.controls.update();
 
       if (progress < 1) {
         requestAnimationFrame(animate);
+      } else {
+        // Hard-set final camera/target to avoid drift and keep knob perfectly centered
+        this.camera.position.copy(targetPosition);
+        this.controls.target.copy(targetLookAt);
+        this.controls.update();
+
+        // After knob animation completes, lock controls tightly around knob
+        if (this.currentView === "knob") {
+          const knobCenter = targetLookAt.clone();
+          const distance = this.camera.position.distanceTo(knobCenter);
+
+          this.controls.enablePan = false;
+          this.controls.minDistance = distance * 0.9;
+          this.controls.maxDistance = distance * 1.1;
+          this.controls.minPolarAngle = Math.PI / 3;
+          this.controls.maxPolarAngle = Math.PI / 2.2;
+
+          this.camera.lookAt(knobCenter);
+          this.controls.target.copy(knobCenter);
+          this.controls.update();
+        }
       }
     };
 
@@ -1928,7 +2092,6 @@ class ClickHandler {
     });
   }
 }
-
 class BatConfigurator {
   constructor() {
     this.scene = null;

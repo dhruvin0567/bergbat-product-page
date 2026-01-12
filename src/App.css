@@ -1,0 +1,34 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Oswald', sans-serif;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+}
+
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  height: auto;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.canvas-wrapper {
+  width: 100%;
+  height: 450px;
+  background: #ffffff;
+}
+
+.canvas-wrapper canvas {
+  width: 100% !important;
+  height: 450px !important;
+  background: #ffffff;
+}
