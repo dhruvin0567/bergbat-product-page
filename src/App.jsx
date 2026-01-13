@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+  import React, { useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
@@ -19,6 +19,7 @@ const App = () => {
       savedHandleColor = null
       localStorage.removeItem('handleColor')
     }
+    
     if (savedBarrelColor && oldDefaults.includes(savedBarrelColor)) {
       savedBarrelColor = null
       localStorage.removeItem('barrelColor')
@@ -36,6 +37,16 @@ const App = () => {
   const initialColors = getInitialColors()
   const [handleColor, setHandleColor] = useState(initialColors.handleColor)
   const [barrelColor, setBarrelColor] = useState(initialColors.barrelColor)
+  
+  // Barrel text can be a string or array of strings for multiple lines
+  // Examples:
+  // - Single line: setBarrelText('PRO RESERVE VOLPE1')
+  // - Multiple lines: setBarrelText(['PRO RESERVE VOLPE1', 'MAPLE • 32 OZ • DATE'])
+  // - Update dynamically: setBarrelText(['ksakckas'])
+  const [barrelText, setBarrelText] = useState([
+    'PRO RESERVE VOLPE1',
+    'MAPLE • 32 OZ • DATE'
+  ])
 
   useEffect(() => {
     if (handleColor) {
@@ -66,7 +77,11 @@ const App = () => {
             position={[0, 0, 9]}
             fov={15}    
           />
-          <BaseballBat handleColor={handleColor} barrelColor={barrelColor} />
+          <BaseballBat 
+            handleColor={handleColor} 
+            barrelColor={barrelColor} 
+            barrelText={barrelText}
+          />
         </Canvas>
       </div>
       <ColorCustomizer
