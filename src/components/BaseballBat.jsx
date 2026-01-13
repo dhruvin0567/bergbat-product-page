@@ -45,15 +45,14 @@ function BaseballBatModel({ handleColor, barrelColor }) {
         const groupName = findGroupName(child)
         
         let color
-        const defaultHandleColor = '#8B4513' 
-        const defaultBarrelColor = '#4169E1' 
+        const defaultColor = '#D6C1AD' 
         
         if (groupName === 'Handle') {
-          color = new THREE.Color(handleColor || defaultHandleColor)
+          color = new THREE.Color(handleColor || defaultColor)
         } else if (groupName === 'Barrel') {
-          color = new THREE.Color(barrelColor || defaultBarrelColor)
+          color = new THREE.Color(barrelColor || defaultColor)
         } else {
-          color = new THREE.Color(barrelColor || defaultBarrelColor)
+          color = new THREE.Color(barrelColor || defaultColor)
         }
 
         child.material = new THREE.MeshStandardMaterial({
@@ -80,8 +79,9 @@ function BaseballBatModel({ handleColor, barrelColor }) {
   }, [obj])
 
   useEffect(() => {
-    if (handleColor && handleMeshesRef.current.length > 0) {
-      const color = new THREE.Color(handleColor)
+    if (handleMeshesRef.current.length > 0) {
+      const defaultColor = '#D6C1AD'
+      const color = new THREE.Color(handleColor || defaultColor)
       handleMeshesRef.current.forEach((mesh) => {
         if (mesh.material) {
           mesh.material.color.copy(color)
@@ -91,8 +91,9 @@ function BaseballBatModel({ handleColor, barrelColor }) {
   }, [handleColor])
 
   useEffect(() => {
-    if (barrelColor && barrelMeshesRef.current.length > 0) {
-      const color = new THREE.Color(barrelColor)
+    if (barrelMeshesRef.current.length > 0) {
+      const defaultColor = '#D6C1AD'
+      const color = new THREE.Color(barrelColor || defaultColor)
       barrelMeshesRef.current.forEach((mesh) => {
         if (mesh.material) {
           mesh.material.color.copy(color)
