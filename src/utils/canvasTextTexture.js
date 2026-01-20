@@ -1,114 +1,116 @@
-import * as THREE from 'three'
+import * as THREE from "three";
 
-/**
- * Creates a canvas texture with printed text for baseball bat barrel
- * @param {string|string[]} textLines - Single line or array of text lines to render
- * @param {Object} options - Configuration options
- * @returns {THREE.CanvasTexture} Canvas texture with transparent background
- */
 export function createTextTexture(textLines, options = {}) {
   const {
     width = 2048,
     height = 512,
-    fontSize = 120,
-    fontFamily = 'Arial, sans-serif',
-    fontWeight = 'bold',
-    textColor = '#000000',
-    backgroundColor = 'transparent',
-    padding = 40,
-    lineHeight = 1.4,
-    textAlign = 'center',
-    textBaseline = 'middle',
-  } = options
+    fontSize = [24, 56, 24],
+    fontFamily = "Arial, sans-serif",
+    fontWeight = "bold",
+    textColor = "#000000",
+    lineHeight = 1.15,
+    backgroundColor = "#ffffff",
+  } = options;
 
-  // Normalize textLines to array
-  const lines = Array.isArray(textLines) ? textLines : [textLines]
+  const lines = Array.isArray(textLines) ? textLines : [textLines];
 
-  // Create canvas
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
 
-  // Fill with white background (will show base color when multiplied with material)
-  ctx.fillStyle = backgroundColor === 'transparent' ? '#ffffff' : backgroundColor
-  ctx.fillRect(0, 0, width, height)
+  if (backgroundColor === "transparent") {
+    ctx.clearRect(0, 0, width, height);
+  } else {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
+  }
 
-  // Configure text rendering with better quality
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-  ctx.fillStyle = textColor
-  ctx.textAlign = textAlign
-  ctx.textBaseline = textBaseline
-  
-  // Enable better text rendering
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "center";
 
-  // Calculate total text height
-  const totalTextHeight = lines.length * fontSize * lineHeight
-  const startY = (height - totalTextHeight) / 2 + fontSize / 2
+  const fontSizes = Array.isArray(fontSize)
+    ? fontSize
+    : new Array(lines.length).fill(fontSize);
 
-  // Draw each line of text
-  lines.forEach((line, index) => {
-    const y = startY + index * fontSize * lineHeight
-    ctx.fillText(line, width / 2, y)
-  })
+  let totalHeight = 0;
+  const lineHeights = [];
 
-  // Create texture from canvas
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.flipY = false // Important for proper UV mapping
-  texture.needsUpdate = true
+  fontSizes.forEach((size) => {
+    const h = size * lineHeight;
+    lineHeights.push(h);
+    totalHeight += h;
+  });
 
-  return texture
+  let y = (height - totalHeight) / 1 + fontSizes[0] / 2;
+
+  lines.forEach((line, i) => {
+    ctx.font = `${fontWeight} ${fontSizes[i]}px ${fontFamily}`;
+    const xPos = width / 2;
+    ctx.fillText(line, xPos, y);
+    y += lineHeights[i];
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = true;
+  texture.needsUpdate = true;
+
+  return texture;
 }
 
-/**
- * Updates an existing canvas texture with new text
- * @param {THREE.CanvasTexture} texture - Existing texture to update
- * @param {string|string[]} textLines - New text to render
- * @param {Object} options - Configuration options (same as createTextTexture)
- */
 export function updateTextTexture(texture, textLines, options = {}) {
   const {
-    width = 2048,
-    height = 512,
-    fontSize = 120,
-    fontFamily = 'Arial, sans-serif',
-    fontWeight = 'bold',
-    textColor = '#000000',
-    textAlign = 'center',
-    textBaseline = 'middle',
-    lineHeight = 1.4,
-  } = options
+    width = 100,
+    height = 250,
+    fontSize = 60,
+    fontFamily = "Arial, sans-serif",
+    fontWeight = "bold",
+    textColor = "#000000",
+    lineHeight = 1,
+    backgroundColor = "#ffffff",
+  } = options;
 
-  const lines = Array.isArray(textLines) ? textLines : [textLines]
-  const canvas = texture.image
+  const lines = Array.isArray(textLines) ? textLines : [textLines];
+  const canvas = texture.image;
+  const ctx = canvas.getContext("2d");
 
-  if (!canvas) return
+  if (backgroundColor === "transparent") {
+    ctx.clearRect(0, 0, width, height);
+  } else {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
+  }
 
-  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "start";
+  ctx.textBaseline = "middle";
 
-  // Fill with white background
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, width, height)
+  const fontSizes = Array.isArray(fontSize)
+    ? fontSize
+    : new Array(lines.length).fill(fontSize);
 
-  // Configure text rendering
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-  ctx.fillStyle = textColor
-  ctx.textAlign = textAlign
-  ctx.textBaseline = textBaseline
+  let totalHeight = 0;
+  const lineHeights = [];
 
-  // Calculate total text height
-  const totalTextHeight = lines.length * fontSize * lineHeight
-  const startY = (height - totalTextHeight) / 2 + fontSize / 2
+  fontSizes.forEach((size) => {
+    const h = size * lineHeight;
+    lineHeights.push(h);
+    totalHeight += h;
+  });
 
-  // Draw each line of text
-  lines.forEach((line, index) => {
-    const y = startY + index * fontSize * lineHeight
-    ctx.fillText(line, width / 2, y)
-  })
+  let y = (height - totalHeight) / 1 + fontSizes[0] / 2;
 
-  // Mark texture for update
-  texture.needsUpdate = true
+  lines.forEach((line, i) => {
+    ctx.font = `${fontWeight} ${fontSizes[i]}px ${fontFamily}`;
+    ctx.fillText(line, width / 2, y);
+    y += lineHeights[i];
+  });
+
+  texture.needsUpdate = true;
 }

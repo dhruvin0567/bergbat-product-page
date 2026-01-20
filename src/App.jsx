@@ -1,4 +1,4 @@
-  import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
@@ -9,44 +9,39 @@ import './App.css'
 const App = () => {
   const getInitialColors = () => {
     const defaultColor = '#D6C1AD'
-    
+
     const oldDefaults = ['#8B4513', '#4169E1', '#d3bfaa']
-    
+
     let savedHandleColor = localStorage.getItem('handleColor')
     let savedBarrelColor = localStorage.getItem('barrelColor')
-    
+
     if (savedHandleColor && oldDefaults.includes(savedHandleColor)) {
       savedHandleColor = null
       localStorage.removeItem('handleColor')
     }
-    
+
     if (savedBarrelColor && oldDefaults.includes(savedBarrelColor)) {
       savedBarrelColor = null
       localStorage.removeItem('barrelColor')
     }
-    
+
     const handleColor = savedHandleColor && savedHandleColor !== 'null' ? savedHandleColor : defaultColor
     const barrelColor = savedBarrelColor && savedBarrelColor !== 'null' ? savedBarrelColor : defaultColor
-    
+
     return {
       handleColor,
       barrelColor
     }
   }
 
-  const initialColors = getInitialColors()
+  const initialColors = getInitialColors();
   const [handleColor, setHandleColor] = useState(initialColors.handleColor)
   const [barrelColor, setBarrelColor] = useState(initialColors.barrelColor)
-  
-  // Barrel text can be a string or array of strings for multiple lines
-  // Examples:
-  // - Single line: setBarrelText('PRO RESERVE VOLPE1')
-  // - Multiple lines: setBarrelText(['PRO RESERVE VOLPE1', 'MAPLE • 32 OZ • DATE'])
-  // - Update dynamically: setBarrelText(['ksakckas'])
+  const [handlesColors, setHandlesColors] = useState();
+
   const [barrelText, setBarrelText] = useState([
-    'PRO RESERVE VOLPE1',
-    'MAPLE • 32 OZ • DATE'
-  ])
+
+  ]);
 
   useEffect(() => {
     if (handleColor) {
@@ -54,43 +49,54 @@ const App = () => {
     } else {
       localStorage.removeItem('handleColor')
     }
-  }, [handleColor])
+  }, [handleColor]);
 
   useEffect(() => {
     localStorage.setItem('barrelColor', barrelColor)
-  }, [barrelColor])
+  }, [barrelColor]);
+
+  useEffect(() => {
+    localStorage.setItem('barrelText', barrelText)
+  }, []);
 
   return (
-    <div className="app-container">
-      <div className="canvas-wrapper">
-        <Canvas
-          shadows
-          dpr={[1, 2]}
-          gl={{
-            antialias: true,
-            toneMapping: THREE.ACESFilmicToneMapping,
-            outputColorSpace: THREE.SRGBColorSpace,
-          }}
-        >
-          <PerspectiveCamera
-            makeDefault
-            position={[0, 0, 9]}
-            fov={15}    
-          />
-          <BaseballBat 
-            handleColor={handleColor} 
-            barrelColor={barrelColor} 
-            barrelText={barrelText}
-          />
-        </Canvas>
+    <>
+      <div className="app-container">
+        <div className="canvas-wrapper">
+          <Canvas
+            shadows
+            dpr={[1, 2]}
+            gl={{
+              antialias: true,
+              toneMapping: THREE.ACESFilmicToneMapping,
+              outputColorSpace: THREE.SRGBColorSpace,
+            }}
+          >
+
+            <PerspectiveCamera
+              makeDefault
+              position={[0, 0, 9]}
+              fov={15}
+            />
+
+            <BaseballBat
+              handleColor={handleColor}
+              barrelColor={barrelColor}
+              barrelText=""
+              logo="/img/logo/logo.png"
+            />
+
+          </Canvas>
+        </div>
+
+        <ColorCustomizer
+          handleColor={handleColor}
+          barrelColor={barrelColor}
+          onHandleColorChange={setHandleColor}
+          onBarrelColorChange={setBarrelColor}
+        />
       </div>
-      <ColorCustomizer
-        handleColor={handleColor}
-        barrelColor={barrelColor}
-        onHandleColorChange={setHandleColor}
-        onBarrelColorChange={setBarrelColor}
-      />
-    </div>
+    </>
   )
 }
 

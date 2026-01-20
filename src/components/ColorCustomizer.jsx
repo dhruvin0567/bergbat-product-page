@@ -24,7 +24,6 @@ const COLOR_OPTIONS = [
   { name: 'Light Pink', value: '#f7e1e1' },
 ]
 
-// Logo options - you can add more logo images here
 const LOGO_OPTIONS = [
   { name: 'Logo 1', value: '/img/logo/logo.png' },
   { name: 'Logo 2', value: '/img/logo/logo.png' },
@@ -44,7 +43,11 @@ const LOGO_OPTIONS = [
   { name: 'Logo 16', value: '/img/logo/logo.png' },
 ]
 
-const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarrelColorChange }) => {
+const ColorCustomizer = ({
+  handleColor,
+  barrelColor,
+  onHandleColorChange,
+  onBarrelColorChange }) => {
   const [selectedLogo, setSelectedLogo] = useState(null)
   const [length, setLength] = useState('32')
   const [weight, setWeight] = useState('')
@@ -58,7 +61,6 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
   const [additionalNotes, setAdditionalNotes] = useState('')
 
   const handleAddToCart = () => {
-    // Add to cart logic here
     console.log('Add to cart:', {
       handleColor,
       barrelColor,
@@ -79,7 +81,7 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
   return (
     <div className="color-customizer">
       <h2 className="customizer-title">CUSTOMIZE YOUR BAT</h2>
-      
+
       <div className="customization-sections-container">
         <div className="customization-section">
           <h3 className="section-title">HANDLE FINISH</h3>
@@ -132,9 +134,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
         <div className="form-row">
           <div className="form-field">
             <label className="field-label">LENGTH (IN)</label>
-            <select 
-              className="form-select" 
-              value={length} 
+            <select
+              className="form-select"
+              value={length}
               onChange={(e) => setLength(e.target.value)}
             >
               <option value="30">30 in</option>
@@ -147,9 +149,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
 
           <div className="form-field">
             <label className="field-label">WEIGHT (OZ)</label>
-            <select 
-              className="form-select" 
-              value={weight} 
+            <select
+              className="form-select"
+              value={weight}
               onChange={(e) => setWeight(e.target.value)}
             >
               <option value="">Select...</option>
@@ -168,9 +170,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Choose between gloss and matte finishes. Gloss provides a shiny, professional look while matte offers a more subdued appearance.
             </p>
-            <select 
-              className="form-select" 
-              value={batFinish} 
+            <select
+              className="form-select"
+              value={batFinish}
               onChange={(e) => setBatFinish(e.target.value)}
             >
               <option value="">Select...</option>
@@ -184,9 +186,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Hard Maple is the most popular wood bat type. It has a tight grain structure and is known for its durability and performance.
             </p>
-            <select 
-              className="form-select" 
-              value={woodSpecies} 
+            <select
+              className="form-select"
+              value={woodSpecies}
               onChange={(e) => setWoodSpecies(e.target.value)}
             >
               <option value="">Select...</option>
@@ -203,9 +205,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Xtra Processing (XP) finish requires additional curing time and provides enhanced hardness and durability.
             </p>
-            <select 
-              className="form-select" 
-              value={xtraProcessing} 
+            <select
+              className="form-select"
+              value={xtraProcessing}
               onChange={(e) => setXtraProcessing(e.target.value)}
             >
               <option value="">Select...</option>
@@ -219,9 +221,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Add our patented Axe Handle for a unique feel and improved grip control.
             </p>
-            <select 
-              className="form-select" 
-              value={axeHandle} 
+            <select
+              className="form-select"
+              value={axeHandle}
               onChange={(e) => setAxeHandle(e.target.value)}
             >
               <option value="">Select...</option>
@@ -234,9 +236,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
         <div className="form-row">
           <div className="form-field">
             <label className="field-label">TOPREED</label>
-            <select 
-              className="form-select" 
-              value={topreed} 
+            <select
+              className="form-select"
+              value={topreed}
               onChange={(e) => setTopreed(e.target.value)}
             >
               <option value="">Select...</option>
@@ -250,9 +252,10 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Once your order is completed, your bat will be placed in the same high priority lane as our pro athlete orders.
             </p>
-            <select 
-              className="form-select" 
-              value={batRushProduction} 
+
+            <select
+              className="form-select"
+              value={batRushProduction}
               onChange={(e) => setBatRushProduction(e.target.value)}
             >
               <option value="">Select...</option>
@@ -268,9 +271,9 @@ const ColorCustomizer = ({ handleColor, barrelColor, onHandleColorChange, onBarr
             <p className="field-description">
               Cupping is designed to take weight off the end of the bat to add a more balanced feel - while keeping to the chosen weight. Available in No Cup, Kiss Cup (smallest), Half Cup and Cup (largest).
             </p>
-            <select 
-              className="form-select" 
-              value={customCupping} 
+            <select
+              className="form-select"
+              value={customCupping}
               onChange={(e) => setCustomCupping(e.target.value)}
             >
               <option value="">Select...</option>
